@@ -4,6 +4,23 @@ import errno
 import sys
 from struct import *
 
+def receive_game_status(client_soc):
+    msg = client_soc.recv(12)
+    (nA, nB, nC) = unpack('iii', msg)
+    print("Heap A: {}\nHeap B: {}\nHeap C: {}".format(nA, nB, nC))
+
+def receive_char(client_soc):
+    msg = client_soc.recv(1)
+    return unpack('c', msg)[0].decode('ascii')
+
+def send_turn(client_soc, turn):
+    if turn[0] == 'Q':
+        client_soc.send(pack('cc', 'Q'.encode('ascii'), 'Q'.encode('ascii')))
+        return False
+    (heap, num) = turn
+    client_soc.send(pack('cc', heap.encode('ascii'), num.encode('ascii')))
+    return True
+
 try:
     client_soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_port = 6444
@@ -15,15 +32,11 @@ try:
             client_port = int(sys.argv[2])
     
     client_soc.connect((client_host, client_port))
+
     while True:
-        msg = client_soc.recv(12)
-        (nA, nB, nC) = unpack('iii', msg)
-        print("Heap A: {}\nHeap B: {}\nHeap C: {}".format(nA, nB, nC))
+        receive_game_status(client_soc)
 
-        msg = client_soc.recv(1)
-        (move) = unpack('c', msg)
-        move = move[0].decode('ascii')
-
+        move = receive_char(client_soc)
         if(move == 'W'):
             print("You Win!")
             break
@@ -33,15 +46,9 @@ try:
         print("Your turn:")
 
         turn = input().split(' ')
-        if turn[0] == 'Q':
-            client_soc.send(pack('cc', 'Q'.encode('ascii'), 'Q'.encode('ascii')))
-            break
+        if not send_turn(client_soc, turn): break # returns false if turn is Q 
 
-        (heap, num) = turn
-        client_soc.send(pack('cc', heap.encode('ascii'), num.encode('ascii')))
-
-        is_llegal =unpack('c', client_soc.recv(1)) 
-        is_llegal = is_llegal[0].decode('ascii')
+        is_llegal = receive_char(client_soc)
 
         if is_llegal == "I":
             print("Illegal move")
@@ -52,7 +59,7 @@ except OSError as error:
     if error.errno == errno.ECONNREFUSED:
         print("connection refused by server")
     else:
-        print(error.strerror)
+        print("Error", error.strerror)
 
-print("Disconnected from server")
 client_soc.close()
+print("Disconnected from server")
