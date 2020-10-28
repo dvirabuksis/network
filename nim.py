@@ -4,6 +4,8 @@ import errno
 import sys
 from struct import *
 
+game_ended_without_error = True
+
 def receive_game_status(client_soc):
     msg = client_soc.recv(12)
     (nA, nB, nC) = unpack('iii', msg)
@@ -23,15 +25,15 @@ def send_turn(client_soc, turn):
 
 try:
     client_soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_port = 6444
-    client_host = 'localhost'
+    port = 6444
+    hostname = 'localhost'
 
     if len(sys.argv) > 1:
-        client_host = sys.argv[1]
+        hostname = sys.argv[1]
         if len(sys.argv)>2:
-            client_port = int(sys.argv[2])
+            port = int(sys.argv[2])
     
-    client_soc.connect((client_host, client_port))
+    client_soc.connect((hostname, port))
 
     while True:
         receive_game_status(client_soc)
@@ -46,7 +48,7 @@ try:
         print("Your turn:")
 
         turn = input().split(' ')
-        if not send_turn(client_soc, turn): break # returns false if turn is Q 
+        if not send_turn(client_soc, turn): break # send_turn returns false if turn is Q
 
         is_llegal = receive_char(client_soc)
 
@@ -56,10 +58,11 @@ try:
             print("Move accepted")
 
 except OSError as error:
+    game_ended_without_error = False
     if error.errno == errno.ECONNREFUSED:
-        print("connection refused by server")
+        print("Failed to connect to server: connection refused by server")
     else:
-        print("Error", error.strerror)
+        print("Disconnected from server")
 
 client_soc.close()
-print("Disconnected from server")
+if (game_ended_without_error): print("Disconnected from server")

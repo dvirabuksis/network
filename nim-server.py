@@ -112,6 +112,6 @@ try:
     soc_obj.close()
 except OSError as error:
     if error.errno == errno.ECONNREFUSED:
-        print("connection refused by client")
+        print("Failed to connect with client: connection refused by client")
     else:
-        print("Error:", error.strerror)
+        print("Server Error:", error.strerror)
