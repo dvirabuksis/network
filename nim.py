@@ -6,27 +6,34 @@ from struct import *
 
 game_ended_without_error = True
 
+def receive_data(client_soc, size, format):
+    """
+    receive data from the server and make sure that everything arrived
+    """
+    data = client_soc.recv(size)
+    while len(data) < size:
+        data += client_soc.recv(size-len(data))
+    return unpack(format, data)
+
 def receive_game_status(client_soc):
     """
     attempt to receive the game status from the server
     (as 3 integers that represent the heaps status)
     """
-    msg = client_soc.recv(12)
-    (nA, nB, nC) = unpack('iii', msg)
+    (nA, nB, nC) = receive_data(client_soc, 12, 'iii')
     print("Heap A: {}\nHeap B: {}\nHeap C: {}".format(nA, nB, nC))
 
 def receive_char(client_soc):
     """
     attempt to receive a single char from the server
     """
-    msg = client_soc.recv(1)
-    return unpack('c', msg)[0].decode('ascii')
+    c = receive_data(client_soc, 1, 'c')[0]
+    return c.decode('ascii')
 
-def send_turn(client_soc, c, i):
+def send_data(client_soc, obj):
     """
     send data to the server and make sure everything was sent
     """
-    obj = pack('>ci', c.encode('ascii'), i)
     size = len(obj)
     sent_bytes = 0
     while sent_bytes < size:
@@ -39,7 +46,7 @@ def make_turn(client_soc, turn):
     else, returns True
     """
     if turn[0] == 'Q':
-        send_turn(client_soc, 'Q', 0)
+        send_data(client_soc, pack('>ci', 'Q'.encode('ascii'), 0))
         return False
     
     # for every illegal move that is in an incorrect format (char,int) we send a genric
@@ -57,7 +64,7 @@ def make_turn(client_soc, turn):
         if len(heap) != 1:
             heap = 'I'
             num = 0
-    send_turn(client_soc, heap, num)
+    send_data(client_soc, pack('>ci', heap.encode('ascii'), num))
     return True
 
 try:
@@ -86,7 +93,7 @@ try:
         print("Your turn:") # move = 'T'
 
         turn = input().split(' ')
-        if not make_turn(client_soc, turn): break # send_turn returns false if turn is Q
+        if not make_turn(client_soc, turn): break # make_turn returns false if turn is Q
 
         is_llegal = receive_char(client_soc)
 

@@ -46,12 +46,21 @@ def send_char(conn_soc, c):
     """
     send_data(conn_soc, pack('c',c.encode('ascii')))
 
+def receive_data(conn_soc, size, format):
+    """
+    receive data from the client and make sure that everything arrived
+    """
+    data = conn_soc.recv(size)
+    while len(data) < size:
+        data += conn_soc.recv(size-len(data))
+    return unpack(format, data)
+
 def receive_turn(conn_soc):
     """
     attempt to receive a turn from the client, as a char and int
     possible values: first char [A,B,C,Q], second value [any integer]
     """
-    (heap, num) = unpack('>ci', conn_soc.recv(5))
+    (heap, num) = receive_data(conn_soc, 5, '>ci')
     heap = heap.decode('ascii')
     return [heap, num]
 
