@@ -7,15 +7,27 @@ from struct import *
 game_ended_without_error = True
 
 def receive_game_status(client_soc):
+    """
+    attempt to receive the game status from the server
+    (as 3 integers that represent the heaps status)
+    """
     msg = client_soc.recv(12)
     (nA, nB, nC) = unpack('iii', msg)
     print("Heap A: {}\nHeap B: {}\nHeap C: {}".format(nA, nB, nC))
 
 def receive_char(client_soc):
+    """
+    attempt to receive a single char from the server
+    """
     msg = client_soc.recv(1)
     return unpack('c', msg)[0].decode('ascii')
 
 def send_turn(client_soc, turn):
+    """
+    send a turn to server
+    if the turn is quit(Q) returns False
+    else, returns True
+    """
     if turn[0] == 'Q':
         client_soc.send(pack('cc', 'Q'.encode('ascii'), 'Q'.encode('ascii')))
         return False
@@ -33,6 +45,7 @@ try:
         if len(sys.argv)>2:
             port = int(sys.argv[2])
     
+    print("setting up a connection:",hostname,":",port)
     client_soc.connect((hostname, port))
 
     while True:
@@ -63,6 +76,7 @@ except OSError as error:
         print("Failed to connect to server: connection refused by server")
     else:
         print("Disconnected from server")
+        print("Error:", error.strerror)
 
 client_soc.close()
 if (game_ended_without_error): print("Disconnected from server")

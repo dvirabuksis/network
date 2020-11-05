@@ -17,18 +17,31 @@ else:
     server_port = 6444
 
 def reset_heaps():
+    """
+    reset the status of the heaps for every new game
+    """
     global nA, nB, nC
     nA = original_na
     nB = original_nb
     nC = original_nc
 
 def send_heaps_status(conn_soc):
+    """
+    send the status of the heaps as 3 integers to the client socket
+    """
     conn_soc.send(pack('iii',nA, nB, nC))
 
 def send_char(conn_soc, c):
+    """
+    send a value as single char to the client socket
+    """
     conn_soc.send(pack('c',c.encode('ascii')))
 
 def receive_turn(conn_soc):
+    """
+    attempt to receive a turn from the client, as 2 chars
+    possible values: first char [A,B,C,Q], second char[any integer]
+    """
     (heap, num) = unpack('cc',conn_soc.recv(2))
     heap = heap.decode('ascii')
     if heap == 'Q':
@@ -38,6 +51,10 @@ def receive_turn(conn_soc):
     return [heap, num]
 
 def apply_turn(heap, num):
+    """
+    apply a turn of the client on the heaps
+    return a bool whether the turn was legal or not
+    """
     global nA, nB, nC
     if heap == "A":
         if num <= nA:
@@ -54,12 +71,20 @@ def apply_turn(heap, num):
             nC -= num
         else:
             return False
+    else:
+        return False
     return True
 
 def game_ended():
+    """
+    check if the game has ended (all heaps are empty), returns a bool
+    """
     return nA == 0 and nB == 0 and nC == 0
 
 def server_move():
+    """
+    apply a server move
+    """
     global nA, nB, nC
     if nA < nB or nA < nC:
         if nB < nC:
@@ -69,7 +94,11 @@ def server_move():
     else:
         nA -= 1
 
-def game(conn_soc):
+def run_game(conn_soc):
+    """
+    run a single game between server and client, until someone wins,
+    the client quits, or an error occures
+    """
     reset_heaps()
     winner = 0
     while True:
@@ -107,8 +136,17 @@ try:
     soc_obj.bind(('', server_port))
     soc_obj.listen(5)
     while True:
-        (conn_soc, address) = soc_obj.accept()
-        game(conn_soc)
+        try:
+            print("waiting for socket")
+            (conn_soc, address) = soc_obj.accept()
+            print("got a socket starting game")
+            run_game(conn_soc)
+        except KeyboardInterrupt as error:
+            print("ctrl c")
+            break
+        except:
+            print("error")
+            pass #client disconnected in the middle of communication, keep the server running 
     soc_obj.close()
 except OSError as error:
     if error.errno == errno.ECONNREFUSED:
