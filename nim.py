@@ -22,14 +22,24 @@ def receive_char(client_soc):
     msg = client_soc.recv(1)
     return unpack('c', msg)[0].decode('ascii')
 
-def send_turn(client_soc, turn):
+def send_turn(client_soc, c, i):
+    """
+    send data to the server and make sure everything was sent
+    """
+    obj = pack('>ci', c.encode('ascii'), i)
+    size = len(obj)
+    sent_bytes = 0
+    while sent_bytes < size:
+        sent_bytes += client_soc.send(obj[sent_bytes:])
+
+def make_turn(client_soc, turn):
     """
     send a turn to server
     if the turn is quit(Q) returns False
     else, returns True
     """
     if turn[0] == 'Q':
-        client_soc.send(pack('>ci', 'Q'.encode('ascii'), 0))
+        send_turn(client_soc, 'Q', 0)
         return False
     
     # for every illegal move that is in an incorrect format (char,int) we send a genric
@@ -47,7 +57,7 @@ def send_turn(client_soc, turn):
         if len(heap) != 1:
             heap = 'I'
             num = 0
-    client_soc.send(pack('>ci', heap.encode('ascii'), num))
+    send_turn(client_soc, heap, num)
     return True
 
 try:
@@ -76,7 +86,7 @@ try:
         print("Your turn:") # move = 'T'
 
         turn = input().split(' ')
-        if not send_turn(client_soc, turn): break # send_turn returns false if turn is Q
+        if not make_turn(client_soc, turn): break # send_turn returns false if turn is Q
 
         is_llegal = receive_char(client_soc)
 

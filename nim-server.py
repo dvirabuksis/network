@@ -25,17 +25,26 @@ def reset_heaps():
     nB = original_nb
     nC = original_nc
 
+def send_data(conn_soc, obj):
+    """
+    send data to client and make sure everything was sent
+    """
+    size = len(obj)
+    sent_bytes = 0
+    while sent_bytes < size:
+        sent_bytes += conn_soc.send(obj[sent_bytes:])
+
 def send_heaps_status(conn_soc):
     """
     send the status of the heaps as 3 integers to the client socket
     """
-    conn_soc.send(pack('iii',nA, nB, nC))
+    send_data(conn_soc, pack('iii',nA, nB, nC))
 
 def send_char(conn_soc, c):
     """
     send a value as single char to the client socket
     """
-    conn_soc.send(pack('c',c.encode('ascii')))
+    send_data(conn_soc, pack('c',c.encode('ascii')))
 
 def receive_turn(conn_soc):
     """
