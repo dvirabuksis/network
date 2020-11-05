@@ -29,10 +29,25 @@ def send_turn(client_soc, turn):
     else, returns True
     """
     if turn[0] == 'Q':
-        client_soc.send(pack('cc', 'Q'.encode('ascii'), 'Q'.encode('ascii')))
+        client_soc.send(pack('>ci', 'Q'.encode('ascii'), 0))
         return False
-    (heap, num) = turn
-    client_soc.send(pack('cc', heap.encode('ascii'), num.encode('ascii')))
+    
+    # for every illegal move that is in an incorrect format (char,int) we send a genric
+    # illegal move - ('I',0)
+    if (len(turn) != 2):
+        heap = 'I'
+        num = 0
+    else:
+        (heap, num) = turn
+        try:
+            num = int(num)
+        except:
+            heap = 'I'
+            num = 0
+        if len(heap) != 1:
+            heap = 'I'
+            num = 0
+    client_soc.send(pack('>ci', heap.encode('ascii'), num))
     return True
 
 try:
@@ -58,7 +73,7 @@ try:
         elif(move == "L"):
             print("Server win!")
             break
-        print("Your turn:")
+        print("Your turn:") # move = 'T'
 
         turn = input().split(' ')
         if not send_turn(client_soc, turn): break # send_turn returns false if turn is Q

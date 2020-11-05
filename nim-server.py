@@ -39,15 +39,11 @@ def send_char(conn_soc, c):
 
 def receive_turn(conn_soc):
     """
-    attempt to receive a turn from the client, as 2 chars
-    possible values: first char [A,B,C,Q], second char[any integer]
+    attempt to receive a turn from the client, as a char and int
+    possible values: first char [A,B,C,Q], second value [any integer]
     """
-    (heap, num) = unpack('cc',conn_soc.recv(2))
+    (heap, num) = unpack('>ci', conn_soc.recv(5))
     heap = heap.decode('ascii')
-    if heap == 'Q':
-        num = 0
-    else:    
-        num = int(num.decode('ascii'))
     return [heap, num]
 
 def apply_turn(heap, num):
@@ -55,6 +51,7 @@ def apply_turn(heap, num):
     apply a turn of the client on the heaps
     return a bool whether the turn was legal or not
     """
+    if num <= 0: return False
     global nA, nB, nC
     if heap == "A":
         if num <= nA:
@@ -144,8 +141,8 @@ try:
         except KeyboardInterrupt as error:
             print("ctrl c")
             break
-        except:
-            print("error")
+        except Exception as err:
+            print("error:",err)
             pass #client disconnected in the middle of communication, keep the server running 
     soc_obj.close()
 except OSError as error:
