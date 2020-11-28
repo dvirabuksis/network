@@ -7,12 +7,14 @@ from struct import *
 nA = int(sys.argv[1])
 nB = int(sys.argv[2])
 nC = int(sys.argv[3])
+max_num_of_players = int(sys.argv[4])
+size_of_wait_list = int(sys.argv[5])
 original_na = nA
 original_nb = nB
 original_nc = nC
 
-if len(sys.argv) > 4:
-    server_port = int(sys.argv[4])
+if len(sys.argv) > 6:
+    server_port = int(sys.argv[6])
 else:
     server_port = 6444
 
@@ -152,15 +154,14 @@ try:
     soc_obj.listen(5)
     while True:
         try:
-            print("waiting for socket")
+            print("Waiting for a new connection")
             (conn_soc, address) = soc_obj.accept()
-            print("got a socket starting game")
+            print("Received a new connection, starting game")
             run_game(conn_soc)
         except KeyboardInterrupt as error:
-            print("ctrl c")
+            print("Server was Stopped")
             break
         except Exception as err:
-            print("error:",err)
             pass #client disconnected in the middle of communication, keep the server running 
     soc_obj.close()
 except OSError as error:

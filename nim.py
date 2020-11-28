@@ -77,7 +77,6 @@ try:
         if len(sys.argv)>2:
             port = int(sys.argv[2])
     
-    print("setting up a connection:",hostname,":",port)
     client_soc.connect((hostname, port))
 
     while True:
