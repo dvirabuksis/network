@@ -6,13 +6,18 @@ def send_data(conn_soc, obj):
     """
     size = len(obj)
     sent_bytes = 0
+    print(size)
     while sent_bytes < size:
         sent_bytes += conn_soc.send(obj[sent_bytes:])
+    print(sent_bytes)
 
 def send_heaps_status(conn_soc,game):
     """
     send the status of the heaps as 3 integers to the client socket
     """
+    print(game.nA)
+    print(game.nB)
+    print(game.nC)
     obj = pack('iii',game.nA, game.nB, game.nC)
     send_data(conn_soc, obj)
 

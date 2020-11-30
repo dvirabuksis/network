@@ -20,13 +20,31 @@ else:
 
 playing_clients = {}
 
-def run_single_round(socket):
+def run_single_round(socket, start):
     '''
     run a single round for a single game
     return true if the game is over, false if still going
     '''
     game = playing_clients[socket]
+    # print("1")
+    if(start == False):
+        heap, num = receive_turn(socket)
+        # print("1")
+        if (heap == 'Q'): 
+            return True
+        # print("1")
+        is_legal = game.apply_client_turn(heap, num)
+        # print("1")
+        if not is_legal:
+            send_char(socket, 'I')
+        else:
+            send_char(socket, 'A')
+        # print("1")
+        game.apply_server_turn()
+        # print("1")
+    
     send_heaps_status(socket,game)
+    
     if game.winner == 1:
         send_char(socket,'W')
         return True
@@ -35,16 +53,8 @@ def run_single_round(socket):
         return True
     else:
         send_char(socket, 'T')
+    # print("1")
     
-    heap, num = receive_turn(socket)
-    if (heap == 'Q'): return True
-
-    is_legal = game.apply_client_turn(heap, num)
-
-    if not is_legal:
-        send_char(socket, 'I')
-    else:
-        send_char(socket, 'A')
     return False
 
 try:
@@ -58,18 +68,25 @@ try:
     while True:
         try:
             print("run")
-            readable, _, _ = select.select(read_list,[],[],timeout=1)
+            readable, _, _ = select.select(read_list,[],[])
             for socket in readable:
                 if socket is server:
                     print("server")
                     new_client, _ = server.accept()
+                    # print("1")
                     read_list.append(new_client)
+                    # print("2")
                     new_game = Game(nA,nB,nC)
+                    # print("3")
                     playing_clients[new_client] = new_game
-                    is_over = run_single_round(new_client)
+                    # print("4")
+                    is_over = run_single_round(new_client,True)
+                    # print("5")
                 else:
                     print("client")
-                    is_over = run_single_round(socket)
+                    is_over = run_single_round(socket,False)
+                    if(is_over):
+                        del playing_clients[new_client]
         except KeyboardInterrupt as error:
             print("Server was Stopped")
             break
