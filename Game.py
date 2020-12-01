@@ -15,8 +15,8 @@ class Game:
             else:
                 self.nC -= 1
         else:
-            if (self.nA > self.nC):
-                self.nA -= 1
+            if (self.nB > self.nC):
+                self.nB -= 1
             else:
                 self.nC -= 1
         if self.is_done():

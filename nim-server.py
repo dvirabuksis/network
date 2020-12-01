@@ -26,22 +26,16 @@ def run_single_round(socket, start):
     return true if the game is over, false if still going
     '''
     game = playing_clients[socket]
-    # print("1")
     if(start == False):
         heap, num = receive_turn(socket)
-        # print("1")
         if (heap == 'Q'): 
             return True
-        # print("1")
         is_legal = game.apply_client_turn(heap, num)
-        # print("1")
         if not is_legal:
             send_char(socket, 'I')
         else:
             send_char(socket, 'A')
-        # print("1")
         game.apply_server_turn()
-        # print("1")
     
     send_heaps_status(socket,game)
     
@@ -53,7 +47,6 @@ def run_single_round(socket, start):
         return True
     else:
         send_char(socket, 'T')
-    # print("1")
     
     return False
 
@@ -67,32 +60,36 @@ try:
 
     while True:
         try:
-            print("run")
+            print("Server iteration, waiting for read ready sockets.")
+            print("Current read list:",[socket.fileno() for socket in read_list])
             readable, _, _ = select.select(read_list,[],[])
             for socket in readable:
                 if socket is server:
-                    print("server")
+                    print("readable socket: server")
                     new_client, _ = server.accept()
-                    # print("1")
                     read_list.append(new_client)
-                    # print("2")
                     new_game = Game(nA,nB,nC)
-                    # print("3")
                     playing_clients[new_client] = new_game
-                    # print("4")
+                    print("created a new client socket, running first round")
                     is_over = run_single_round(new_client,True)
-                    # print("5")
+                    if(is_over):
+                        print("client game is over, deleting from lists")
+                        del playing_clients[new_client]
+                        read_list.remove(new_client)
                 else:
-                    print("client")
+                    print("readable socket: client, running a single round")
                     is_over = run_single_round(socket,False)
                     if(is_over):
-                        del playing_clients[new_client]
+                        print("client game is over, deleting from lists")
+                        del playing_clients[socket]
+                        read_list.remove(socket)
+            print("\n\n")
         except KeyboardInterrupt as error:
             print("Server was Stopped")
             break
         except Exception as err:
-            print("error")
-            pass #client disconnected in the middle of communication, keep the server running 
+            print("error:",str(err))
+            pass
     server.close()
 except OSError as error:
     if error.errno == errno.ECONNREFUSED:

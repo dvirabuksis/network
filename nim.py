@@ -5,8 +5,6 @@ import sys
 from struct import *
 from communication import *
 
-game_ended_without_error = True
-
 def make_turn(client_soc, turn):
     """
     send a turn to server
@@ -70,7 +68,6 @@ try:
             print("Move accepted")
 
 except OSError as error:
-    game_ended_without_error = False
     if error.errno == errno.ECONNREFUSED:
         print("Failed to connect to server: connection refused by server")
     else:
@@ -78,4 +75,3 @@ except OSError as error:
         print("Error:", error.strerror)
 
 client_soc.close()
-if (game_ended_without_error): print("Disconnected from server")
