@@ -33,6 +33,8 @@ def make_turn(client_soc, turn):
     send_data(client_soc, pack('>ci', heap.encode('ascii'), num))
     return True
 
+
+#### run ####
 try:
     client_soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     port = 6444
@@ -44,28 +46,37 @@ try:
             port = int(sys.argv[2])
     
     client_soc.connect((hostname, port))
+    
+    status = receive_acceptance_status(client_soc)
+    if status == "reject":
+        print("You are rejected by the server.")
+    else:
+        if status == "waitlist":
+            print("Waiting to play against the server.")
+            wait_for_server(client_soc)
 
-    while True:
-        receive_game_status(client_soc)
+        print("Now you are playing against the server!")
+        while True:
+            receive_game_status(client_soc)
 
-        move = receive_char(client_soc)
-        if(move == 'W'):
-            print("You Win!")
-            break
-        elif(move == "L"):
-            print("Server win!")
-            break
-        print("Your turn:") # move = 'T'
+            move = receive_char(client_soc)
+            if(move == 'W'):
+                print("You Win!")
+                break
+            elif(move == "L"):
+                print("Server win!")
+                break
+            print("Your turn:") # move = 'T'
 
-        turn = input().split(' ')
-        if not make_turn(client_soc, turn): break # make_turn returns false if turn is Q
+            turn = input().split(' ')
+            if not make_turn(client_soc, turn): break # make_turn returns false if turn is Q
 
-        is_llegal = receive_char(client_soc)
+            is_llegal = receive_char(client_soc)
 
-        if is_llegal == "I":
-            print("Illegal move")
-        elif is_llegal == "A":
-            print("Move accepted")
+            if is_llegal == "I":
+                print("Illegal move")
+            elif is_llegal == "A":
+                print("Move accepted")
 
 except OSError as error:
     if error.errno == errno.ECONNREFUSED:

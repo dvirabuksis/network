@@ -29,6 +29,35 @@ def send_char(conn_soc, c):
     """
     send_data(conn_soc, pack('c',c.encode('ascii')))
 
+def send_acceptance_status(conn_soc, status):
+    """
+    send message to the client if his game request was accepted or not
+    """
+    if status == "accept":
+        send_char(conn_soc,'A')
+    if status == "waitlist":
+        send_char(conn_soc,'W')
+    if status == "reject":
+        send_char(conn_soc,'R')
+
+def receive_acceptance_status(conn_soc):
+    """
+    send message to the client if his game request was accepted or not
+    """
+    c = receive_char(conn_soc)
+    if c == 'A':
+        return "accept"
+    if c == 'W':
+        return "waitlist"
+    if c == 'R':
+        return "reject"
+
+def wait_for_server(conn_soc):
+    """
+    wait for indication of starting game, after waiting in waitlist
+    """
+    return receive_acceptance_status(conn_soc)
+
 def receive_data(conn_soc, size, format):
     """
     receive data from the client and make sure that everything arrived
