@@ -1,3 +1,6 @@
+##########################################
+# Game class to handle each game's logic #
+##########################################
 class Game:
     def __init__(self, nA, nB, nC):
         self.nA = nA

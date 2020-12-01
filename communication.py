@@ -1,5 +1,10 @@
 from struct import *
 
+#################################################
+# all of the functions related to data transfer #
+#          both for client and server           #
+#################################################
+
 def send_data(conn_soc, obj):
     """
     send data to client and make sure everything was sent
