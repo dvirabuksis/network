@@ -58,10 +58,10 @@ def initialize_game_for_client(client):
     """
     new_game = Game(nA,nB,nC)
     playing_clients[client] = new_game
-    print("created a new client socket, running first round")
+    print("running first round for client",client.fileno())
     send_acceptance_status(client,"accept")
-    read_list.append(new_client)
-    play_round(new_client,True)
+    read_list.append(client)
+    play_round(client,True)
 
 def handle_new_client(client):
     """
@@ -85,6 +85,7 @@ def pop_client_from_waitlist():
     """
     if (len(waitlist) > 0):
         client = waitlist.pop(0)
+        print("popped {} from waitlist".format(client.fileno()))
         initialize_game_for_client(client)
 
 def play_round(socket, is_first_round):
@@ -112,14 +113,16 @@ try:
             print("Server iteration, waiting for read ready sockets.")
             print("Current read list:",[socket.fileno() for socket in read_list])
             print("Current waitlist:",[socket.fileno() for socket in waitlist])
+            readable = []
             readable, _, _ = select.select(read_list,[],[])
             for socket in readable:
                 if socket is server:
                     print("readable socket: server")
                     new_client, _ = server.accept()
+                    print("got a new client with socket number:",new_client.fileno())
                     handle_new_client(new_client)
                 else:
-                    print("readable socket: client, running a single round")
+                    print("readable socket: client {}, running a single round".format(socket.fileno()))
                     play_round(socket,False)
             print("")
         except KeyboardInterrupt as error:
@@ -131,7 +134,7 @@ try:
             break
         except Exception as err:
             print("Server Error:",str(err))
-            pass
+            break
     server.close()
 except Exception as err:
     print("Error in creating server socket:",str(err))

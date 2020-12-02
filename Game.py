@@ -12,6 +12,8 @@ class Game:
         return self.nA == 0 and self.nB == 0 and self.nC == 0
 
     def apply_server_turn(self):
+        if self.winner != 0:
+            return
         if (self.nA > self.nB):
             if (self.nA > self.nC):
                 self.nA -= 1
