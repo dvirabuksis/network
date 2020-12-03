@@ -58,7 +58,6 @@ def initialize_game_for_client(client):
     """
     new_game = Game(nA,nB,nC)
     playing_clients[client] = new_game
-    print("running first round for client",client.fileno())
     send_acceptance_status(client,"accept")
     read_list.append(client)
     play_round(client,True)
@@ -72,11 +71,9 @@ def handle_new_client(client):
     if (len(playing_clients) < max_num_of_players):
         initialize_game_for_client(client)
     elif (len(waitlist) < size_of_wait_list):
-        print("client was added to waitlist")
         waitlist.append(client)
         send_acceptance_status(client,"waitlist")
     else:
-        print("client was rejected")
         send_acceptance_status(client,"reject")
         
 def pop_client_from_waitlist():
@@ -85,8 +82,12 @@ def pop_client_from_waitlist():
     """
     if (len(waitlist) > 0):
         client = waitlist.pop(0)
-        print("popped {} from waitlist".format(client.fileno()))
         initialize_game_for_client(client)
+
+def remove_client(socket):
+    del playing_clients[socket]
+    read_list.remove(socket)
+    pop_client_from_waitlist()
 
 def play_round(socket, is_first_round):
     """
@@ -94,10 +95,7 @@ def play_round(socket, is_first_round):
     """
     is_over = run_single_round(socket,is_first_round)
     if(is_over):
-        print("client game is over, deleting from lists")
-        del playing_clients[socket]
-        read_list.remove(socket)
-        pop_client_from_waitlist()
+        remove_client(socket)
 
 #### run ####
 try:
@@ -110,21 +108,22 @@ try:
 
     while True:
         try:
-            print("Server iteration, waiting for read ready sockets.")
-            print("Current read list:",[socket.fileno() for socket in read_list])
-            print("Current waitlist:",[socket.fileno() for socket in waitlist])
             readable = []
             readable, _, _ = select.select(read_list,[],[])
-            for socket in readable:
-                if socket is server:
+            for conn_socket in readable:
+                if conn_socket is server:
                     print("readable socket: server")
                     new_client, _ = server.accept()
                     print("got a new client with socket number:",new_client.fileno())
                     handle_new_client(new_client)
                 else:
-                    print("readable socket: client {}, running a single round".format(socket.fileno()))
-                    play_round(socket,False)
-            print("")
+                    print("readable socket: client {}, running a single round".format(conn_socket.fileno()))
+                    data = conn_socket.recv(1024, socket.MSG_PEEK)
+                    if data == b'':
+                        print("disconnected from client")
+                        remove_client(conn_socket)
+                        continue
+                    play_round(conn_socket,False)
         except KeyboardInterrupt as error:
             print("Server was Stopped")
             break

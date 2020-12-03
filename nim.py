@@ -4,6 +4,7 @@ import errno
 import sys
 from struct import *
 from communication import *
+import select
 
 def make_turn(client_soc, turn):
     """
@@ -32,6 +33,17 @@ def make_turn(client_soc, turn):
             num = 0
     send_data(client_soc, pack('>ci', heap.encode('ascii'), num))
     return True
+
+def input_ready(client_soc):
+    # check if stdin is ready
+    readable, _, _ = select.select([sys.stdin],[],[],1)
+    if len(readable) > 0: #there is an input waiting
+        return True
+    if not test_connection_with_server(client_soc):
+        print("Disconnected from server")
+        client_soc.close()
+        exit(1)
+    return False
 
 
 #### run ####
@@ -67,7 +79,8 @@ try:
                 print("Server win!")
                 break
             print("Your turn:") # move = 'T'
-
+            
+            while not input_ready(client_soc): pass
             turn = input().split(' ')
             if not make_turn(client_soc, turn): break # make_turn returns false if turn is Q
 
@@ -83,6 +96,5 @@ except OSError as error:
         print("Failed to connect to server: connection refused by server")
     else:
         print("Disconnected from server")
-        print("Error:", error.strerror)
 
 client_soc.close()

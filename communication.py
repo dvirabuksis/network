@@ -1,4 +1,6 @@
 from struct import *
+import select
+import socket
 
 #################################################
 # all of the functions related to data transfer #
@@ -49,6 +51,14 @@ def receive_acceptance_status(conn_soc):
     """
     send message to the client if his game request was accepted or not
     """
+    status = "still connected"
+    while status == "still connected":
+        status = test_connection_and_if_read_ready(conn_soc)
+    if status == "disconnected":
+        print("Disconnected from server")
+        conn_soc.close()
+        exit(1)
+
     c = receive_char(conn_soc)
     if c == 'A':
         return "accept"
@@ -88,3 +98,32 @@ def receive_game_status(client_soc):
     """
     (nA, nB, nC) = receive_data(client_soc, 12, 'iii')
     print("Heap A: {}\nHeap B: {}\nHeap C: {}".format(nA, nB, nC))
+
+def test_connection_with_server(client_soc):
+    """
+    check if the connection with the server is still alive
+    """
+    try:
+        readable, _, _ = select.select([client_soc],[],[],1)
+        if len(readable) > 0:
+            data = client_soc.recv(1024, socket.MSG_PEEK)
+            if data == b'':
+                return False
+        return True
+    except:
+        return False
+
+def test_connection_and_if_read_ready(client_soc):
+    """
+    check if the connection with the server is still alive
+    """
+    try:
+        readable, _, _ = select.select([client_soc],[],[],1)
+        if len(readable) > 0:
+            data = client_soc.recv(1024, socket.MSG_PEEK)
+            if data == b'':
+                return "disconnected"
+            return "got data"
+        return "still connected"
+    except Exception as err:
+        return "disconnected"
